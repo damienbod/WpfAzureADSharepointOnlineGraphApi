@@ -108,16 +108,16 @@ namespace active_directory_wpf_msgraph_v2
                     .Children
                     .Request().GetAsync();
 
-                var item = items
-                    .FirstOrDefault(folder => folder.Folder != null && folder.WebUrl.Contains(folderToUse));
+                var folder = items
+                    .FirstOrDefault(f => f.Folder != null && f.WebUrl.Contains(folderToUse));
 
                 string path = @"dummy.txt";
                 byte[] data = System.IO.File.ReadAllBytes(path);
                 Stream stream = new MemoryStream(data);
                 await graphClient.Sites[site.Id]
                         .Drives[drive.Id]
-                        .Items[item.Id]
-                        .ItemWithPath("dummy.txt")
+                        .Items[folder.Id]
+                        .ItemWithPath("dummy1.txt")
                         .Content
                         .Request()
                         .PutAsync<DriveItem>(stream);
@@ -125,6 +125,20 @@ namespace active_directory_wpf_msgraph_v2
 
                 DisplayBasicTokenInfo(authResult);
                 this.SignOutButton.Visibility = Visibility.Visible;
+
+                string fileNames = string.Empty;
+                var files = await graphClient
+                    .Sites[site.Id]
+                    .Drives[drive.Id]
+                    .Items[folder.Id]
+                    .Children
+                    .Request().GetAsync();
+
+                foreach(var file in files)
+                {
+                    fileNames = $"{fileNames} {file.Name}";
+                }
+                ResultText.Text = fileNames;
             }
         }
 
