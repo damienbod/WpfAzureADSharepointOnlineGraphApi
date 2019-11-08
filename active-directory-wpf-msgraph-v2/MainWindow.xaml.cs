@@ -3,7 +3,6 @@ using Microsoft.Identity.Client;
 using System;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Windows;
@@ -16,9 +15,6 @@ namespace active_directory_wpf_msgraph_v2
     /// </summary>
     public partial class MainWindow : Window
     {
-        //Set the API Endpoint to Graph 'me' endpoint
-        string graphAPIEndpoint = "https://graph.microsoft.com/v1.0/me";
-
         //Set the scope for API call to user.read
         string[] scopes = new string[] {   "user.read", "AllSites.FullControl" };
 
@@ -75,74 +71,80 @@ namespace active_directory_wpf_msgraph_v2
 
             if (authResult != null)
             {
-                //Creates the client with the access token
-                GraphServiceClient graphClient = new GraphServiceClient(
-                    new DelegateAuthenticationProvider(
-                        async (requestMessage) => {
-                    // Append the access token to the request.
-                    requestMessage.Headers.Authorization =
-                                new AuthenticationHeaderValue("bearer",
-                                    authResult.AccessToken);
-                        }));
-
-                var sharepointDomain = "damienbodsharepoint.sharepoint.com";
-                var relativePath = "/sites/ListView";
-                var folderToUse = "TestDocs";
-
-                var site = await graphClient
-                    .Sites[sharepointDomain]
-                    .SiteWithPath(relativePath)
-                    .Request()
-                    .GetAsync();
-
-                var drive = await graphClient
-                    .Sites[site.Id]
-                    .Drive
-                    .Request()
-                    .GetAsync();
-
-                var items = await graphClient
-                    .Sites[site.Id]
-                    .Drives[drive.Id]
-                    .Root
-                    .Children
-                    .Request().GetAsync();
-
-                var folder = items
-                    .FirstOrDefault(f => f.Folder != null && f.WebUrl.Contains(folderToUse));
-
-                string path = @"dummy.txt";
-                byte[] data = System.IO.File.ReadAllBytes(path);
-                Stream stream = new MemoryStream(data);
-                await graphClient.Sites[site.Id]
-                        .Drives[drive.Id]
-                        .Items[folder.Id]
-                        .ItemWithPath("dummy1.txt")
-                        .Content
-                        .Request()
-                        .PutAsync<DriveItem>(stream);
-
+                await DoGraphApiCalls(authResult);
 
                 DisplayBasicTokenInfo(authResult);
                 this.SignOutButton.Visibility = Visibility.Visible;
-
-                string fileNames = string.Empty;
-                var files = await graphClient
-                    .Sites[site.Id]
-                    .Drives[drive.Id]
-                    .Items[folder.Id]
-                    .Children
-                    .Request().GetAsync();
-
-                foreach(var file in files)
-                {
-                    fileNames = $"{fileNames} {file.Name}";
-                }
-                ResultText.Text = fileNames;
             }
         }
 
-        
+        private async Task DoGraphApiCalls(AuthenticationResult authResult)
+        {
+            var sharepointDomain = "damienbodsharepoint.sharepoint.com";
+            var relativePath = "/sites/ListView";
+            var folderToUse = "TestDocs";
+
+            GraphServiceClient graphClient = new GraphServiceClient(
+                new DelegateAuthenticationProvider(
+                    async (requestMessage) =>
+                    {
+                        requestMessage.Headers.Authorization =
+                            new AuthenticationHeaderValue("bearer",
+                                authResult.AccessToken);
+                    }));
+
+            var site = await graphClient
+                .Sites[sharepointDomain]
+                .SiteWithPath(relativePath)
+                .Request()
+                .GetAsync();
+
+            var drive = await graphClient
+                .Sites[site.Id]
+                .Drive
+                .Request()
+                .GetAsync();
+
+            var items = await graphClient
+                .Sites[site.Id]
+                .Drives[drive.Id]
+                .Root
+                .Children
+                .Request().GetAsync();
+
+            // folder to upload to
+            var folder = items
+                .FirstOrDefault(f => f.Folder != null && f.WebUrl.Contains(folderToUse));
+
+            // Upload file
+            string path = @"dummy.txt";
+            byte[] data = System.IO.File.ReadAllBytes(path);
+            Stream stream = new MemoryStream(data);
+            await graphClient.Sites[site.Id]
+                    .Drives[drive.Id]
+                    .Items[folder.Id]
+                    .ItemWithPath("dummy1.txt")
+                    .Content
+                    .Request()
+                    .PutAsync<DriveItem>(stream);
+
+
+            string fileNames = string.Empty;
+            var files = await graphClient
+                .Sites[site.Id]
+                .Drives[drive.Id]
+                .Items[folder.Id]
+                .Children
+                .Request().GetAsync();
+
+            foreach (var file in files)
+            {
+                fileNames = $"{fileNames} {file.Name}";
+            }
+
+            ResultText.Text = fileNames;
+        }
+
         /// <summary>
         /// Perform an HTTP GET request to a URL using an HTTP Authorization header
         /// </summary>
