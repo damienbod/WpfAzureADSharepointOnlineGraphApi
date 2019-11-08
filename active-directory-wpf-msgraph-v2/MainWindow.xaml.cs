@@ -16,7 +16,7 @@ namespace active_directory_wpf_msgraph_v2
         string graphAPIEndpoint = "https://graph.microsoft.com/v1.0/me";
 
         //Set the scope for API call to user.read
-        string[] scopes = new string[] {   "user.read" };
+        string[] scopes = new string[] {   "user.read", "AllSites.FullControl" };
 
         public string access_token = string.Empty;
 
@@ -75,7 +75,7 @@ namespace active_directory_wpf_msgraph_v2
 
                 // https://graph.microsoft.com/v1.0/sites/damienbodsharepoint.sharepoint.com:/search/docs/Forms/AllItems.aspx
                 //var url = "https://damienbodsharepoint.sharepoint.com/search/docs/Forms/AllItems.aspx";
-                var url = "https://graph.microsoft.com/v1.0/sites/damienbodsharepoint.sharepoint.com:/search/docs/Forms/AllItems.aspx";
+                var url = "https://graph.microsoft.com/v1.0/sites/damienbodsharepoint.sharepoint.com:/sites/listview";
                 
                 ResultText.Text = await GetHttpContentWithToken(url, authResult.AccessToken);
                 DisplayBasicTokenInfo(authResult);
