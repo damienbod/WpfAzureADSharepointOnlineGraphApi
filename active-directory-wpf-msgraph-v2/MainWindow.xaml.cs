@@ -73,11 +73,15 @@ namespace active_directory_wpf_msgraph_v2
             {
                 access_token = authResult.AccessToken;
 
-                // https://graph.microsoft.com/v1.0/sites/damienbodsharepoint.sharepoint.com:/search/docs/Forms/AllItems.aspx
-                //var url = "https://damienbodsharepoint.sharepoint.com/search/docs/Forms/AllItems.aspx";
                 var url = "https://graph.microsoft.com/v1.0/sites/damienbodsharepoint.sharepoint.com:/sites/listview";
-                
+                var id = "damienbodsharepoint.sharepoint.com,73102e3f-af8c-4b6a-b0dd-4afb915cf7de,4d004fec-6241-44cf-86f4-04a8d00cea9e";
+                var url2 = $"https://graph.microsoft.com/v1.0/sites/{id}";
+                var url3 = $"https://graph.microsoft.com/v1.0/sites/{id}/drives"; 
+
                 ResultText.Text = await GetHttpContentWithToken(url, authResult.AccessToken);
+                ResultText.Text = await GetHttpContentWithToken(url2, authResult.AccessToken);
+                ResultText.Text = await GetHttpContentWithToken(url3, authResult.AccessToken);
+
                 DisplayBasicTokenInfo(authResult);
                 this.SignOutButton.Visibility = Visibility.Visible;
             }
