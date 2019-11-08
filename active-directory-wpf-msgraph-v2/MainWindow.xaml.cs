@@ -1,6 +1,9 @@
-﻿using Microsoft.Identity.Client;
+﻿using Microsoft.Graph;
+using Microsoft.Identity.Client;
 using System;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
@@ -55,7 +58,7 @@ namespace active_directory_wpf_msgraph_v2
                     authResult = await app.AcquireTokenInteractive(scopes)
                         .WithAccount(accounts.FirstOrDefault())
                         .WithParentActivityOrWindow(new WindowInteropHelper(this).Handle) // optional, used to center the browser on the window
-                        .WithPrompt(Prompt.SelectAccount)
+                        .WithPrompt(Microsoft.Identity.Client.Prompt.SelectAccount)
                         .ExecuteAsync();
                 }
                 catch (MsalException msalex)
@@ -71,22 +74,60 @@ namespace active_directory_wpf_msgraph_v2
 
             if (authResult != null)
             {
-                access_token = authResult.AccessToken;
+                //Creates the client with the access token
+                GraphServiceClient graphClient = new GraphServiceClient(
+                    new DelegateAuthenticationProvider(
+                        async (requestMessage) => {
+                    // Append the access token to the request.
+                    requestMessage.Headers.Authorization =
+                                new AuthenticationHeaderValue("bearer",
+                                    authResult.AccessToken);
+                        }));
 
-                var url = "https://graph.microsoft.com/v1.0/sites/damienbodsharepoint.sharepoint.com:/sites/listview";
-                var id = "damienbodsharepoint.sharepoint.com,73102e3f-af8c-4b6a-b0dd-4afb915cf7de,4d004fec-6241-44cf-86f4-04a8d00cea9e";
-                var url2 = $"https://graph.microsoft.com/v1.0/sites/{id}";
-                var url3 = $"https://graph.microsoft.com/v1.0/sites/{id}/drives"; 
+                var sharepointDomain = "damienbodsharepoint.sharepoint.com";
+                var site = await graphClient.Sites[$"{sharepointDomain}"].Request().GetAsync();
+                var drive = await graphClient.Sites[site.Id].Drive.Request().GetAsync();
 
-                ResultText.Text = await GetHttpContentWithToken(url, authResult.AccessToken);
-                ResultText.Text = await GetHttpContentWithToken(url2, authResult.AccessToken);
-                ResultText.Text = await GetHttpContentWithToken(url3, authResult.AccessToken);
+             
+                //var drives = await graphClient.Sites[site.Id].Drives[drives].Request().GetAsync();
+
+                //var sharepointDomain = "damienbodsharepoint.sharepoint.com";
+                //var url = $"https://graph.microsoft.com/v1.0/sites/{sharepointDomain}:/listview";
+                //var id = "damienbodsharepoint.sharepoint.com,73102e3f-af8c-4b6a-b0dd-4afb915cf7de,4d004fec-6241-44cf-86f4-04a8d00cea9e";
+                //var url2 = $"https://graph.microsoft.com/v1.0/sites/{id}";
+                //var url3 = $"https://graph.microsoft.com/v1.0/sites/{id}/drives";
+                //var driveId = "b!Py4Qc4yvakuw3Ur7kVz33uxPAE1BYs9EhvQEqNAM6p63yoM33buSS6dVrp3w2Z_7";
+                //var url4 = $"https://graph.microsoft.com/v1.0/sites/{sharepointDomain}/drives/{driveId}/root:/sites/listview";
+                //var url5 = $"https://graph.microsoft.com/v1.0/sites/{sharepointDomain}/me/drive/root:/sites/listview:/content";
+                //string json1 = await GetHttpContentWithToken(url, authResult.AccessToken);
+                //string json2 = await GetHttpContentWithToken(url2, authResult.AccessToken);
+                //string json3 = await GetHttpContentWithToken(url3, authResult.AccessToken);
+                //ResultText.Text = await GetHttpContentWithToken(url4, authResult.AccessToken);
+
 
                 DisplayBasicTokenInfo(authResult);
                 this.SignOutButton.Visibility = Visibility.Visible;
             }
         }
 
+        //public async Task<string> GetHttpClient(string token)
+        //{
+        //    var httpClient = new System.Net.Http.HttpClient();
+        //    System.Net.Http.HttpResponseMessage response;
+        //    try
+        //    {
+        //        var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
+        //        //Add the token in Authorization header
+        //        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        //        response = await httpClient.SendAsync(request);
+        //        var content = await response.Content.ReadAsStringAsync();
+        //        return content;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return ex.ToString();
+        //    }
+        //}
         /// <summary>
         /// Perform an HTTP GET request to a URL using an HTTP Authorization header
         /// </summary>
