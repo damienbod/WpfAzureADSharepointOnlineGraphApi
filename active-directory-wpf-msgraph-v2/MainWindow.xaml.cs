@@ -86,21 +86,41 @@ namespace active_directory_wpf_msgraph_v2
                         }));
 
                 var sharepointDomain = "damienbodsharepoint.sharepoint.com";
-                var site = await graphClient.Sites[$"{sharepointDomain}"].Request().GetAsync();
-                var drive = await graphClient.Sites[site.Id].Drive.Request().GetAsync();
+                var relativePath = "/sites/ListView";
+                var folderToUse = "TestDocs";
 
-                // https://graph.microsoft.com/v1.0/sites/{site-id}/drives/{drive-id}/root/children
-                var items = await graphClient.Sites[site.Id].Drives[drive.Id].Root.Children.Request().GetAsync();
+                var site = await graphClient
+                    .Sites[sharepointDomain]
+                    .SiteWithPath(relativePath)
+                    .Request()
+                    .GetAsync();
 
-                
-                // PUT /drives/{drive-id}/items/{parent-id}:/{filename}:/content
+                var drive = await graphClient
+                    .Sites[site.Id]
+                    .Drive
+                    .Request()
+                    .GetAsync();
+
+                var items = await graphClient
+                    .Sites[site.Id]
+                    .Drives[drive.Id]
+                    .Root
+                    .Children
+                    .Request().GetAsync();
+
+                var item = items
+                    .FirstOrDefault(folder => folder.Folder != null && folder.WebUrl.Contains(folderToUse));
+
                 string path = @"dummy.txt";
                 byte[] data = System.IO.File.ReadAllBytes(path);
                 Stream stream = new MemoryStream(data);
-                // Line that updates the existing file 
-                await graphClient.Sites[site.Id].Drives[drive.Id].Root.Children[items[0].Id].Content.Request().PutAsync<DriveItem>(stream,);
-
-                //await graphClient.Sites[site.Id].Drive.Request().PutAsync<DriveItem>(stream);
+                await graphClient.Sites[site.Id]
+                        .Drives[drive.Id]
+                        .Items[item.Id]
+                        .ItemWithPath("dummy.txt")
+                        .Content
+                        .Request()
+                        .PutAsync<DriveItem>(stream);
 
 
                 DisplayBasicTokenInfo(authResult);
