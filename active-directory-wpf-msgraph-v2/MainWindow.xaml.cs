@@ -1,6 +1,7 @@
 ﻿using Microsoft.Graph;
 using Microsoft.Identity.Client;
 using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -88,21 +89,18 @@ namespace active_directory_wpf_msgraph_v2
                 var site = await graphClient.Sites[$"{sharepointDomain}"].Request().GetAsync();
                 var drive = await graphClient.Sites[site.Id].Drive.Request().GetAsync();
 
-             
-                //var drives = await graphClient.Sites[site.Id].Drives[drives].Request().GetAsync();
+                // https://graph.microsoft.com/v1.0/sites/{site-id}/drives/{drive-id}/root/children
+                var items = await graphClient.Sites[site.Id].Drives[drive.Id].Root.Children.Request().GetAsync();
 
-                //var sharepointDomain = "damienbodsharepoint.sharepoint.com";
-                //var url = $"https://graph.microsoft.com/v1.0/sites/{sharepointDomain}:/listview";
-                //var id = "damienbodsharepoint.sharepoint.com,73102e3f-af8c-4b6a-b0dd-4afb915cf7de,4d004fec-6241-44cf-86f4-04a8d00cea9e";
-                //var url2 = $"https://graph.microsoft.com/v1.0/sites/{id}";
-                //var url3 = $"https://graph.microsoft.com/v1.0/sites/{id}/drives";
-                //var driveId = "b!Py4Qc4yvakuw3Ur7kVz33uxPAE1BYs9EhvQEqNAM6p63yoM33buSS6dVrp3w2Z_7";
-                //var url4 = $"https://graph.microsoft.com/v1.0/sites/{sharepointDomain}/drives/{driveId}/root:/sites/listview";
-                //var url5 = $"https://graph.microsoft.com/v1.0/sites/{sharepointDomain}/me/drive/root:/sites/listview:/content";
-                //string json1 = await GetHttpContentWithToken(url, authResult.AccessToken);
-                //string json2 = await GetHttpContentWithToken(url2, authResult.AccessToken);
-                //string json3 = await GetHttpContentWithToken(url3, authResult.AccessToken);
-                //ResultText.Text = await GetHttpContentWithToken(url4, authResult.AccessToken);
+                
+                // PUT /drives/{drive-id}/items/{parent-id}:/{filename}:/content
+                string path = @"dummy.txt";
+                byte[] data = System.IO.File.ReadAllBytes(path);
+                Stream stream = new MemoryStream(data);
+                // Line that updates the existing file 
+                await graphClient.Sites[site.Id].Drives[drive.Id].Root.Children[items[0].Id].Content.Request().PutAsync<DriveItem>(stream,);
+
+                //await graphClient.Sites[site.Id].Drive.Request().PutAsync<DriveItem>(stream);
 
 
                 DisplayBasicTokenInfo(authResult);
@@ -110,24 +108,7 @@ namespace active_directory_wpf_msgraph_v2
             }
         }
 
-        //public async Task<string> GetHttpClient(string token)
-        //{
-        //    var httpClient = new System.Net.Http.HttpClient();
-        //    System.Net.Http.HttpResponseMessage response;
-        //    try
-        //    {
-        //        var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
-        //        //Add the token in Authorization header
-        //        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        //        response = await httpClient.SendAsync(request);
-        //        var content = await response.Content.ReadAsStringAsync();
-        //        return content;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return ex.ToString();
-        //    }
-        //}
+        
         /// <summary>
         /// Perform an HTTP GET request to a URL using an HTTP Authorization header
         /// </summary>
