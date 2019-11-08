@@ -1,6 +1,4 @@
 ﻿using Microsoft.Identity.Client;
-using Microsoft.SharePoint.Client;
-using OfficeDevPnP.Core;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +18,6 @@ namespace active_directory_wpf_msgraph_v2
         //Set the scope for API call to user.read
         string[] scopes = new string[] {   "user.read" };
 
-        public ClientContext clientContext { get; set; }
         public string access_token = string.Empty;
 
         public MainWindow()
@@ -33,18 +30,6 @@ namespace active_directory_wpf_msgraph_v2
         /// </summary>
         private async void CallGraphButton_Click(object sender, RoutedEventArgs e)
         {
-            //AuthenticationManager mgr = new AuthenticationManager();
-            //using (var context = mgr.GetAzureADNativeApplicationAuthenticatedContext(
-            //    "https://damienbodsharepoint.sharepoint.com",
-            //    "411f99c2-19f6-403d-b6db-376bf9a597ad",
-            //    "urn:ietf:wg:oauth:2.0:oob"))
-            //{
-            //    context.Load(context.Web, web => web.Title);
-            //    context.ExecuteQuery();
-            //    Console.WriteLine(context.Web.Title);
-            //    Console.ReadKey();
-            //}
-
             AuthenticationResult authResult = null;
             var app = App.PublicClientApp;
             ResultText.Text = string.Empty;
@@ -88,26 +73,11 @@ namespace active_directory_wpf_msgraph_v2
             {
                 access_token = authResult.AccessToken;
 
-
-                //AuthenticationManager mgr = new AuthenticationManager();
-                //using (var context = mgr.GetAzureADAccessTokenAuthenticatedContext(
-                //    "https://damienbodsharepoint.sharepoint.com/sites/listview",
-                //    access_token))
-                //{
-                //    context.Load(context.Web, web => web.Title);
-                //    context.ExecuteQuery();
-                //    Console.WriteLine(context.Web.Title);
-                //    Console.ReadKey();
-                //}
-
-                await GetDamienTest();
-                // http://server/site/_api/site
-                var url = "https://damienbodsharepoint.sharepoint.com/search/docs/Forms/AllItems.aspx";
+                // https://graph.microsoft.com/v1.0/sites/damienbodsharepoint.sharepoint.com:/search/docs/Forms/AllItems.aspx
+                //var url = "https://damienbodsharepoint.sharepoint.com/search/docs/Forms/AllItems.aspx";
+                var url = "https://graph.microsoft.com/v1.0/sites/damienbodsharepoint.sharepoint.com:/search/docs/Forms/AllItems.aspx";
+                
                 ResultText.Text = await GetHttpContentWithToken(url, authResult.AccessToken);
-
-                // https://damienbodsharepoint.sharepoint.com/search/docs/Forms/AllItems.aspx
-                //ResultText.Text = await GetHttpContentWithToken(graphAPIEndpoint, authResult.AccessToken);
-                ResultText.Text = await GetHttpContentWithToken("https://damienbodsharepoint.sharepoint.com/sites/listview", authResult.AccessToken);
                 DisplayBasicTokenInfo(authResult);
                 this.SignOutButton.Visibility = Visibility.Visible;
             }
@@ -171,29 +141,6 @@ namespace active_directory_wpf_msgraph_v2
                 TokenInfoText.Text += $"Username: {authResult.Account.Username}" + Environment.NewLine;
                 TokenInfoText.Text += $"Token Expires: {authResult.ExpiresOn.ToLocalTime()}" + Environment.NewLine;
             }
-        }
-
-        private async Task GetDamienTest()
-        {
-            try
-            {
-                string spSiteUrl = "https://damienbodsharepoint.sharepoint.com/sites/listview";
-                ClientContext context = new ClientContext(spSiteUrl);
-                context.ExecutingWebRequest += context_ExecutingWebRequest;
-                List documents = context.Web.Lists.GetByTitle("newnew");
-                context.Load(documents, list => list.DefaultViewUrl);
-                // Execute the query to server.
-                await context.ExecuteQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                string dd = ex.Message;
-            }
-        }
-
-        void context_ExecutingWebRequest(object sender, WebRequestEventArgs e)
-        {
-            e.WebRequestExecutor.RequestHeaders["Authorization"] = "Bearer " + access_token;
         }
     }
 }
